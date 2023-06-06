@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WalletDemo.Extensions;
 
 namespace WalletDemo
 {
@@ -26,6 +27,7 @@ namespace WalletDemo
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.ConfigureServiceCollection(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

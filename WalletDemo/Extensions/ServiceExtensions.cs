@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DAL.DbContexts;
 using Domain.Entities;
 using Infrastructure.Services;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,11 +20,12 @@ namespace WalletDemo.Extensions
         {
             services.AddDatabase(config);
 
-            services.AddAuthentication("CookieAuthentication")
-                .AddCookie("CookieAuthentication", configuration =>
+            services.AddAuthentication(opts=>
+                    opts.DefaultAuthenticateScheme = DefaultAuthenticationTypes.ApplicationCookie)
+                .AddCookie(DefaultAuthenticationTypes.ApplicationCookie, configuration =>
                 {
-                    configuration.Cookie.Name = "UserLoginCookie";
-                    configuration.LoginPath = "/Login/UserLogin";
+                    configuration.Cookie.Name = "AuthLogin";
+                    configuration.LoginPath = "/api/login";
                 });
 
             services.RegisterServices();
@@ -36,7 +38,7 @@ namespace WalletDemo.Extensions
         {
             services.AddDbContext<WalletDbContext>(options =>
                 options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
-            services.AddIdentity<ApplicationUser, ApplicationRole>()
+            services.AddIdentity<ApplicationUser, ApplicationRole>(opts=>opts.ConfigureIdentityOptions())
                 .AddEntityFrameworkStores<WalletDbContext>()
                 .AddDefaultTokenProviders();
             services.AddScoped<IDatabaseSeeder, DatabaseSeeder>();

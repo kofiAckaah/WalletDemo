@@ -1,7 +1,9 @@
-﻿namespace Shared.Interfaces
+﻿using System.Threading.Tasks;
+
+namespace Shared.Interfaces
 {
     public interface IDatabaseSeeder
     {
-        void SeedRoles();
+        Task SeedRoles();
     }
 }

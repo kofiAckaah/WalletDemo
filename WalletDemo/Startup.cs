@@ -44,15 +44,13 @@ namespace WalletDemo
 
             app.ConfigureAppBuilder();
 
-            app.UseAuthorization();
-
-            app.UseSwagger();
-            app.UseSwaggerUI();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
+            //app.UseSwagger();
+            //app.UseSwaggerUI();
         }
     }
 }

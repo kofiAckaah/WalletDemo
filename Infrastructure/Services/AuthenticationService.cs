@@ -28,16 +28,17 @@ namespace Infrastructure.Services
                     UserName = request.Username,
                     Email = request.Username,
                     PhoneNumber = request.PhoneNumber
-                }; 
+                };
                 
                 var result = await userManager.CreateAsync(user, request.Password);
                 if (result.Succeeded)
                 {
                     var currentUser = await userManager.FindByNameAsync(user.UserName);
                     await userManager.AddToRoleAsync(currentUser, role);
+                    return GenericResponse.Success;
                 }
 
-                return GenericResponse.Success;
+                return GenericResponse.Failed;
             }
             catch (Exception e)
             {

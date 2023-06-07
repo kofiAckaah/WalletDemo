@@ -10,6 +10,7 @@ using Shared.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Shared.Enums;
+using Microsoft.AspNet.Identity;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -40,9 +41,9 @@ public class AccountController : ControllerBase
                         new Claim(ClaimTypes.Role, RoleConstants.UserRole)
                     };
 
-                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
 
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+                await HttpContext.SignInAsync(DefaultAuthenticationTypes.ApplicationCookie, new ClaimsPrincipal(identity));
 
                 return Ok();
             }
@@ -107,10 +108,10 @@ public class AccountController : ControllerBase
             };
 
             // Create identity from the claims
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
 
             // Sign in the user using the authentication middleware
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+            await HttpContext.SignInAsync(DefaultAuthenticationTypes.ApplicationCookie, new ClaimsPrincipal(identity));
 
             return Ok();
         }

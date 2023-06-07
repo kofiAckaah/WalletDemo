@@ -42,7 +42,12 @@ namespace WalletDemo
 
             app.UseRouting();
 
+            app.ConfigureAppBuilder();
+
             app.UseAuthorization();
+
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseEndpoints(endpoints =>
             {

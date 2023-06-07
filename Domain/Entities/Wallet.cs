@@ -3,7 +3,7 @@ using Domain.Enum;
 
 namespace Domain.Entities
 {
-    public class Wallet
+    public class Wallet : IEntity
     {
         public Guid Id { get; set; }
         public string Name { get; set; }

@@ -1,6 +1,6 @@
 ﻿namespace Shared.Enums
 {
-    public enum GenericResponse
+    public enum ResponseStatus
     {
         Success = 0,
         Failed = 1,

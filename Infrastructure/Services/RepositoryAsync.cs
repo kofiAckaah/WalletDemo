@@ -28,6 +28,12 @@ namespace Infrastructure.Services
             return entityExist != null && entityExist.Id != Guid.Empty;
         }
 
+        public async Task<int> CountAsync()
+        {
+            var total = await appDbContext.Set<T>().ToListAsync();
+            return total.Count;
+        }
+
         public async Task<T> AddAsync(T entity)
         {
             await appDbContext.Set<T>().AddAsync(entity);

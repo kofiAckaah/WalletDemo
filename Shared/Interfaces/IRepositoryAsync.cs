@@ -12,6 +12,7 @@ namespace Shared.Interfaces
         IQueryable<T> Entities { get; }
         Task<T> AddAsync(T entity);
         Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken);
+        Task<int> CountAsync();
         Task DeleteAsync(T entity);
         Task DeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken);
         Task<bool> ExistsAsync(Guid id);

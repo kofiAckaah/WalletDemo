@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Requests;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Shared.Constants;
@@ -11,35 +12,135 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Shared.Enums;
 using Microsoft.AspNet.Identity;
+using Shared.Extensions;
 
-[Route("api/[controller]")]
-[ApiController]
-public class AccountController : ControllerBase
+namespace WalletDemo.Controllers
 {
-    private readonly IAuthService authService;
-
-    public AccountController(IAuthService authService)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AccountController : ControllerBase
     {
-        this.authService = authService;
-    }
+        private readonly IAuthService authService;
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterRequest model)
-    {
-        try
+        public AccountController(IAuthService authService)
         {
-            if (ModelState.IsValid)
-            {
-                var response = await authService.SaveUserAsync(model, RoleConstants.UserRole);
-                if (response == GenericResponse.Failed)
-                    return StatusCode(StatusCodes.Status500InternalServerError);
+            this.authService = authService;
+        }
 
-                // Create claims for the authenticated user
-                var claims = new List<Claim>
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(RegisterRequest model)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    if (!model.PhoneNumber.IsValidPhoneNumber())
+                        return new ContentResult
+                        {
+                            StatusCode = StatusCodes.Status400BadRequest,
+                            Content = "Phone numbers should be only numbers",
+                            ContentType = "string"
+                        };
+                    var response = await authService.SaveUserAsync(model, RoleConstants.UserRole);
+                    if (response.Status == ResponseStatus.Failed)
+                        return new ContentResult
+                        {
+                            StatusCode = StatusCodes.Status500InternalServerError,
+                            Content = response.Message,
+                            ContentType = "string"
+                        };
+
+                    var claims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, model.Username),
                         new Claim(ClaimTypes.Role, RoleConstants.UserRole)
                     };
+
+                    var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
+
+                    await HttpContext.SignInAsync(DefaultAuthenticationTypes.ApplicationCookie, new ClaimsPrincipal(identity));
+
+                    return new ContentResult
+                    {
+                        StatusCode = StatusCodes.Status200OK,
+                        Content = response.Message,
+                        ContentType = "string"
+                    }; ;
+                }
+
+                return BadRequest(ModelState);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPost("admin/register")]
+        public async Task<IActionResult> AdminRegister(RegisterRequest model)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    if (!model.PhoneNumber.IsValidPhoneNumber())
+                        return new ContentResult
+                        {
+                            StatusCode = StatusCodes.Status400BadRequest,
+                            Content = "Phone numbers should be only numbers",
+                            ContentType = "string"
+                        };
+                    var response = await authService.SaveUserAsync(model, RoleConstants.UserRole);
+                    if (response.Status == ResponseStatus.Failed)
+                        return new ContentResult
+                        {
+                            StatusCode = StatusCodes.Status200OK,
+                            Content = response.Message,
+                            ContentType = "string"
+                        };
+                    var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, model.Username),
+                    new Claim(ClaimTypes.Role, RoleConstants.AdminRole)
+                };
+
+                    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+                    return new ContentResult
+                    {
+                        StatusCode = StatusCodes.Status200OK,
+                        Content = response.Message,
+                        ContentType = "string"
+                    }; ;
+                }
+
+                return BadRequest(ModelState);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        // Login action
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginRequest model)
+        {
+            if (ModelState.IsValid)
+            {
+                var response = await authService.LoginUSerAsync(model);
+                if (response.Status == ResponseStatus.Failed)
+                    return StatusCode(StatusCodes.Status500InternalServerError);
+
+                var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, model.Username),
+                new Claim(ClaimTypes.Role, response.Data)
+            };
 
                 var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
 
@@ -50,83 +151,14 @@ public class AccountController : ControllerBase
 
             return BadRequest(ModelState);
         }
-        catch (Exception e)
+
+        // Logout action
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
         {
-            Console.WriteLine(e);
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
-    }
-
-    [HttpPost("admin/register")]
-    public async Task<IActionResult> AdminRegister(RegisterRequest model)
-    {
-        try
-        {
-            if (ModelState.IsValid)
-            {
-                var response = await authService.SaveUserAsync(model, RoleConstants.UserRole);
-                if (response == GenericResponse.Failed)
-                    return StatusCode(StatusCodes.Status500InternalServerError);
-
-                // Create claims for the authenticated user
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, model.Username),
-                    new Claim(ClaimTypes.Role, RoleConstants.UserRole)
-                };
-
-                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
-
-                return Ok();
-            }
-
-            return BadRequest(ModelState);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
-    }
-
-    // Login action
-    [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginRequest model)
-    {
-        // Validate the user's credentials
-        if (ModelState.IsValid)
-        {
-            // Your code to authenticate the user from a database or other data store
-
-            // Create claims for the authenticated user
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, model.Username)
-                // Add additional claims if needed
-            };
-
-            // Create identity from the claims
-            var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
-
-            // Sign in the user using the authentication middleware
-            await HttpContext.SignInAsync(DefaultAuthenticationTypes.ApplicationCookie, new ClaimsPrincipal(identity));
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             return Ok();
         }
-
-        // If the login fails, return an error response
-        return BadRequest(ModelState);
-    }
-
-    // Logout action
-    [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
-    {
-        // Sign out the user
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        return Ok();
     }
 }

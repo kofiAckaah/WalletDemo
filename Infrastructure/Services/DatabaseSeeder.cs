@@ -30,7 +30,6 @@ namespace Infrastructure.Services
                     {
                         Name = roleName,
                         NormalizedName = roleName.ToUpper(),
-                        Id = Guid.NewGuid()
                     };
                     await unitOfWork.Repository<ApplicationRole>().AddAsync(role);
                     await unitOfWork.Commit(CancellationToken.None);

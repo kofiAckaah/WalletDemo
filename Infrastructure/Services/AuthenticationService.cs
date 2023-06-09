@@ -26,7 +26,7 @@ namespace Infrastructure.Services
             try
             {
                 var exists = await userManager.FindByEmailAsync(request.Username);
-                if (exists == null)
+                if (exists != null)
                     return new ResponseWrapper<string> { Message = "User already exists."};
 
                 var user = new ApplicationUser()

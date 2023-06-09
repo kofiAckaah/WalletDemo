@@ -50,6 +50,8 @@ namespace WalletDemo.Extensions
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             services.AddScoped<IAuthService, AuthenticationService>();
+
+            services.AddScoped<IWalletService, WalletService>();
         }
 
         private static void SetupSwagger(this IServiceCollection services)

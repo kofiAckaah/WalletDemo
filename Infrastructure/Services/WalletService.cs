@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,13 +30,13 @@ namespace Infrastructure.Services
         {
             try
             {
-                if (await unitOfWork.Repository<Wallet>().CountAsync() > 5)
+                if (unitOfWork.Repository<Wallet>().Entities.Where(w=>w.WalletOwner.UserName == user).ToList().Count() > 5)
                     return WrapResponse.Fail("Wallets limit reached.", request);
 
                 if(!request.Number.VerifyNumber(request.AccountScheme))
                     return WrapResponse.Fail("Account number is invalid.", request);
 
-                if (!unitOfWork.Repository<Wallet>().Entities
+                if (unitOfWork.Repository<Wallet>().Entities
                         .Any(w => w.NumberHash == request.Number.HashAccountNumber()))
                     return WrapResponse.Fail("Account already exists", request);
 
@@ -76,8 +77,8 @@ namespace Infrastructure.Services
                 var dbUser = await userManager.FindByEmailAsync(userName);
                 if (dbUser == null)
                     return WrapResponse.Fail<List<WalletResponse>>("Invalid operation.");
-
-                var wallets = dbUser.Wallets.ToList();
+                
+                var wallets = unitOfWork.Repository<Wallet>().Entities.Where(w=>w.WalletOwnerId == dbUser.Id).ToList();
                 var response = wallets.Select(wallet => new WalletResponse
                 {
                     Number = wallet.Number,

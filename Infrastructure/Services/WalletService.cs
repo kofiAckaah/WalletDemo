@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +29,10 @@ namespace Infrastructure.Services
         {
             try
             {
+                var dbUser = await userManager.FindByEmailAsync(user);
+                if (dbUser == null)
+                    return WrapResponse.Fail("Invalid operation.", request);
+
                 if (unitOfWork.Repository<Wallet>().Entities.Where(w=>w.WalletOwner.UserName == user).ToList().Count() > 5)
                     return WrapResponse.Fail("Wallets limit reached.", request);
 
@@ -39,10 +42,6 @@ namespace Infrastructure.Services
                 if (unitOfWork.Repository<Wallet>().Entities
                         .Any(w => w.NumberHash == request.Number.HashAccountNumber()))
                     return WrapResponse.Fail("Account already exists", request);
-
-                var dbUser = await userManager.FindByEmailAsync(user);
-                if (dbUser == null)
-                    return WrapResponse.Fail("Invalid operation.", request);
 
                 if (unitOfWork.Repository<Wallet>().Entities.Any(w => w.Name == request.Name))
                     request.Name = request.Name.ToUniqueWalletName();
@@ -102,11 +101,37 @@ namespace Infrastructure.Services
             try
             {
                 var dbUser = await userManager.FindByEmailAsync(userName);
+                if (dbUser == null || dbUser.Wallets.All(w => w.WalletOwnerId != dbUser.Id))
+                    return WrapResponse.Fail<WalletResponse>("Invalid operation.");
+
+                var wallet = dbUser.Wallets.SingleOrDefault(wallet => wallet.Name == walletName);
+
+                var response = new WalletResponse
+                { Name = wallet.Name, Number = wallet.Number, AccountScheme = wallet.AccountScheme.ToString() };
+
+                return WrapResponse.Success("Success.", response);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return WrapResponse.Fail<WalletResponse>("Error performing operation");
+            }
+        }
+
+        ///<inheritdoc/>
+        public async Task<ResponseWrapper<WalletResponse>> AdminGetSingleWallet(string walletName, string userName)
+        {
+            try
+            {
+                var dbUser = await userManager.FindByEmailAsync(userName);
                 if (dbUser == null)
                     return WrapResponse.Fail<WalletResponse>("Invalid operation.");
                 var wallet = dbUser.Wallets.SingleOrDefault(wallet => wallet.Name == walletName);
+
+                if (wallet == null) return WrapResponse.Fail<WalletResponse>("Wallet was not fond.");
+
                 var response = new WalletResponse
-                { Name = wallet.Name, Number = wallet.Number, AccountScheme = wallet.AccountScheme.ToString() };
+                    { Name = wallet.Name, Number = wallet.Number, AccountScheme = wallet.AccountScheme.ToString() };
 
                 return WrapResponse.Success("Success.", response);
             }
@@ -158,9 +183,9 @@ namespace Infrastructure.Services
                     return WrapResponse.Fail<string>("Error performing operation.");
 
                 await unitOfWork.Repository<Wallet>().DeleteAsync(wallet);
+                await unitOfWork.Commit(CancellationToken.None);
 
                 return WrapResponse.Success<string>("Wallet deleted successfully.");
-
             }
             catch (Exception e)
             {

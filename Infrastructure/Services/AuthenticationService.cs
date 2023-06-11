@@ -21,6 +21,7 @@ namespace Infrastructure.Services
             this.userManager = userManager;
         }
 
+        ///<inheritdoc/>
         public async Task<ResponseWrapper<string>> SaveUserAsync(RegisterRequest request, string role)
         {
             try
@@ -53,6 +54,7 @@ namespace Infrastructure.Services
             }
         }
 
+        ///<inheritdoc/>
         public async Task<ResponseWrapper<string>> LoginUSerAsync(LoginRequest request)
         {
             try

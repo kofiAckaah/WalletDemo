@@ -27,46 +27,49 @@ namespace WalletDemo.Controllers
             this.authService = authService;
         }
 
+        /// <summary>
+        /// Register new user.
+        /// </summary>
+        /// <param name="model">A <see cref="RegisterRequest"/> model.</param>
+        /// <returns></returns>
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest model)
         {
             try
             {
-                if (ModelState.IsValid)
-                {
-                    if (!model.PhoneNumber.IsValidPhoneNumber())
-                        return new ContentResult
-                        {
-                            StatusCode = StatusCodes.Status400BadRequest,
-                            Content = "Phone numbers should be only numbers",
-                            ContentType = "string"
-                        };
-                    var response = await authService.SaveUserAsync(model, RoleConstants.UserRole);
-                    if (response.Status == ResponseStatus.Failed)
-                        return new ContentResult
-                        {
-                            StatusCode = StatusCodes.Status500InternalServerError,
-                            Content = response.Message,
-                            ContentType = "string"
-                        };
-
-                    var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, model.Username),
-                        new Claim(ClaimTypes.Role, RoleConstants.UserRole)
-                    };
-
-                    var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
-
-                    await HttpContext.SignInAsync(DefaultAuthenticationTypes.ApplicationCookie, new ClaimsPrincipal(identity));
-
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+                if (!model.PhoneNumber.IsValidPhoneNumber())
                     return new ContentResult
                     {
-                        StatusCode = StatusCodes.Status200OK,
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Content = "Phone numbers should be only numbers",
+                        ContentType = "string"
+                    };
+                var response = await authService.SaveUserAsync(model, RoleConstants.UserRole);
+                if (response.Status == ResponseStatus.Failed)
+                    return new ContentResult
+                    {
+                        StatusCode = StatusCodes.Status500InternalServerError,
                         Content = response.Message,
                         ContentType = "string"
-                    }; ;
-                }
+                    };
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, model.Username),
+                    new Claim(ClaimTypes.Role, RoleConstants.UserRole)
+                };
+
+                var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
+
+                await HttpContext.SignInAsync(DefaultAuthenticationTypes.ApplicationCookie, new ClaimsPrincipal(identity));
+
+                return new ContentResult
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Content = response.Message,
+                    ContentType = "string"
+                }; ;
 
                 return BadRequest(ModelState);
             }
@@ -77,6 +80,11 @@ namespace WalletDemo.Controllers
             }
         }
 
+        /// <summary>
+        /// Register new admin user.
+        /// </summary>
+        /// <param name="model">A <see cref="RegisterRequest"/> model.</param>
+        /// <returns></returns>
         [HttpPost("admin/register")]
         public async Task<IActionResult> AdminRegister(RegisterRequest model)
         {
@@ -126,33 +134,37 @@ namespace WalletDemo.Controllers
             }
         }
 
-        // Login action
+        /// <summary>
+        /// Log user in.
+        /// </summary>
+        /// <param name="model">A <see cref="LoginRequest"/> model.</param>
+        /// <returns>An <see cref="IActionResult"/>.</returns>
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest model)
         {
-            if (ModelState.IsValid)
-            {
-                var response = await authService.LoginUSerAsync(model);
-                if (response.Status == ResponseStatus.Failed)
-                    return StatusCode(StatusCodes.Status500InternalServerError);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                var claims = new List<Claim>
+            var response = await authService.LoginUSerAsync(model);
+            if (response.Status == ResponseStatus.Failed)
+                return StatusCode(StatusCodes.Status500InternalServerError);
+
+            var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, model.Username),
                 new Claim(ClaimTypes.Role, response.Data)
             };
 
-                var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
+            var identity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
 
-                await HttpContext.SignInAsync(DefaultAuthenticationTypes.ApplicationCookie, new ClaimsPrincipal(identity));
+            await HttpContext.SignInAsync(DefaultAuthenticationTypes.ApplicationCookie, new ClaimsPrincipal(identity));
 
-                return Ok();
-            }
-
-            return BadRequest(ModelState);
+            return Ok();
         }
 
-        // Logout action
+        /// <summary>
+        /// Log out user.
+        /// </summary>
+        /// <returns>An <see cref="IActionResult"/>.</returns>
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
